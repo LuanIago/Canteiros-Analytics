@@ -115,15 +115,72 @@ def get_report_html() -> str:
 def main():
 
     try:
-        # 1. Get the HTML (either from the local TXT or the Playwright)
+        # Get the HTML (either from the local TXT or the Playwright)
         raw_html = get_report_html()
 
-        # 2. Treatment of the escape characters of the JavaScript
+        # Treatment of the escape characters of the JavaScript
         clean_html = raw_html.replace(r"\"", '"').replace(r"\n", "\n")
         soup = BeautifulSoup(clean_html, "html.parser")
+        body = soup.find("body")
 
-        # 3. Continues scraping with BeautifulSoup and writes to SQLite
-        # ... 
+        # Groups all products by category in a list
+        tables_by_category = body.find_all("div", class_="table-wrapper")
+
+        products_updated = []
+
+        for table in tables_by_category:
+            # Captures and clears the category name (ex: "ADITIVOS", "COMBUSTIVEIS")
+            category = table.find("table").find("tr").find("th").text.strip()
+
+            # Locates the tbody containing the products of the identified category
+            tbody = table.find("table", class_="fl-table").find("tbody")
+            tbody_prod = tbody.find_all("tr")
+
+            for tr in tbody_prod:
+                prod_info = tr.find_all("td")
+
+                # Prevents blank or incorrect header lines
+                if not prod_info or len(prod_info) < 5:
+                    continue
+
+                prod_code = prod_info[0].text.split("-", 1)[0].strip()
+                prod_name = prod_info[0].text.split("-", 1)[1].strip()
+
+                # Value handling for Python/SQLite native numeric types
+                raw_stock_qt = (
+                    prod_info[1].text.strip().replace(".", "").replace(",", ".")
+                )
+                stock_qt = float(raw_stock_qt) if raw_stock_qt else 0.0
+
+                # Prices: remove 'R$', remove one thousand point and exchange comma per point
+                raw_buy = (
+                    prod_info[2]
+                    .text.replace("R$", "")
+                    .strip()
+                    .replace(".", "")
+                    .replace(",", ".")
+                )
+                raw_sell = (
+                    prod_info[4]
+                    .text.replace("R$", "")
+                    .strip()
+                    .replace(".", "")
+                    .replace(",", ".")
+                )
+
+                buying_price = float(raw_buy) if raw_buy else 0.0
+                selling_price = float(raw_sell) if raw_sell else 0.0
+
+                products_updated.append(
+                    {
+                        "codigo": prod_code,
+                        "nome": prod_name,
+                        "categoria": category,
+                        "qt_estoque": stock_qt,
+                        "preco_venda": selling_price,
+                        "preco_compra": buying_price,
+                    }
+                )
 
     except Exception as e:
         print(f"\n[ERROR] Execution failed: {e}")
