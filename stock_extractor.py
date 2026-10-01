@@ -8,12 +8,10 @@ from bs4 import BeautifulSoup
 # Project base path
 BASE_DIR = Path(__file__).resolve().parent
 
-URL = "http://localhost:7089/"
-
 # Loads the environment variables entered in the file .env
 load_dotenv()
 
-# Pulls the data securely (if none exists, sets a blank default value)
+URL = os.getenv("URL", "")
 USER = os.getenv("POSTO_USER", "")
 PASSWORD = os.getenv("POSTO_PASSWORD", "")
 
@@ -146,7 +144,6 @@ def main():
                 prod_code = prod_info[0].text.split("-", 1)[0].strip()
                 prod_name = prod_info[0].text.split("-", 1)[1].strip()
 
-                # Value handling for Python/SQLite native numeric types
                 raw_stock_qt = (
                     prod_info[1].text.strip().replace(".", "").replace(",", ".")
                 )
