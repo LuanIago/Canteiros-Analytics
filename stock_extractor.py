@@ -184,6 +184,39 @@ def main():
             connection = sqlite3.connect("data/stock_products.db")
             cursor = connection.cursor()
 
+            # temporary
+            cursor.execute("DROP TABLE IF EXISTS produtos;")
+            cursor.execute("DROP TABLE IF EXISTS historico_estoque;")
+            #
+
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS produtos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_sistema TEXT NOT NULL,
+                nome TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                situacao TEXT DEFAULT 'Ativo'
+            );
+            """)
+
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS historico_estoque (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                produto_id INTEGER NOT NULL,
+                data_extracao TEXT NOT NULL,
+                quantidade_atual REAL NOT NULL,
+                preco_venda REAL,
+                preco_compra REAL,
+
+                FOREIGN KEY (produto_id) REFERENCES produtos(id)
+            );
+            """)
+
+            cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_historico_data_prod
+            ON historico_estoque (data_extracao, produto_id);
+            """)
+
     except Exception as e:
         print(f"\n[ERROR] Execution failed: {e}")
         input("\nPress Enter to close the terminal...")
