@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 from datetime import datetime
 from bs4 import BeautifulSoup
+import sqlite3
 
 # Project base path
 BASE_DIR = Path(__file__).resolve().parent
@@ -178,6 +179,10 @@ def main():
                         "preco_compra": buying_price,
                     }
                 )
+
+            # Transfers collected data to the 'stock_products.db' database
+            connection = sqlite3.connect("data/stock_products.db")
+            cursor = connection.cursor()
 
     except Exception as e:
         print(f"\n[ERROR] Execution failed: {e}")
